@@ -161,14 +161,11 @@ export const getGitcodeUserContribution = async (
     await fetchCommitCounts(userName, o.token, start, countsByDate);
   }
 
-  const max = Math.max(0, ...Object.values(countsByDate));
-
+  // fixed absolute thresholds (same idea as the official calendar):
+  // every active day is clearly visible instead of fading to invisible
+  // when one day has a huge count
   const levelForCount = (count: number): Cell["level"] =>
-    count <= 0 || max === 0
-      ? 0
-      : count >= max
-        ? 4
-        : (Math.ceil((count / max) * 3) as 1 | 2 | 3);
+    count <= 0 ? 0 : count <= 2 ? 1 : count <= 5 ? 2 : count <= 9 ? 3 : 4;
 
   const cells: Cell[] = [];
   const cursor = new Date(start);
