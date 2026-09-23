@@ -32,14 +32,14 @@ const palettes = {
     colorBackground: "#ffffff",
     colorDotBorder: "#1b1f230a",
     colorEmpty: "#ebedf0",
-    colorDots: ["#ebedf0", "#9be9a8", "#40c463", "#30a14e", "#216e39"],
+    colorDots: ["#ebedf0", "#ffe066", "#63e6be", "#74c0fc", "#b197fc"],
     colorSnake: "#f97316",
   },
   "gitcode-dark": {
     colorBackground: "#0c1116",
     colorDotBorder: "#1b1f230a",
     colorEmpty: "#161b22",
-    colorDots: ["#161b22", "#0e4429", "#006d32", "#26a641", "#39d353"],
+    colorDots: ["#161b22", "#d4a017", "#20c997", "#4dabf7", "#9775fa"],
     colorSnake: "#f97316",
   },
 };
