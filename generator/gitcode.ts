@@ -147,18 +147,38 @@ export const getGitcodeUserContribution = async (
 
   const countsByDate: Record<string, number> = {};
 
-  // When GITCODE_CALENDAR_JSON points to a dump of the official profile
-  // calendar (web-api .../contributions), trust it over the approximate
-  // events/commits reconstruction.
+  // GITCODE_CALENDAR_JSON seeds counts with a dump of the official profile
+  // calendar. CloudWAF blocks non-browser calls to the web-api, so the dump
+  // must be fetched from a logged-in browser console:
+  //   copy(await fetch('/uc/api/v1/events/<user>/contributions?username=<user>').then(r=>r.json()))
+  // The seed is trusted through its last date; newer days fall back to the
+  // approximate events/commits reconstruction, and those days are written
+  // back so they survive the events api's ~200-event window sliding past.
   const calendarFile = process.env.GITCODE_CALENDAR_JSON;
+  let seedThrough: string | null = null;
   if (calendarFile && fs.existsSync(calendarFile)) {
     const data = JSON.parse(fs.readFileSync(calendarFile, "utf-8")) as Record<string, number>;
-    for (const [date, count] of Object.entries(data))
-      if (typeof count === "number") countsByDate[date] = count;
-    console.log(`📅 using official calendar from ${calendarFile}`);
-  } else {
-    await fetchEventCounts(userName, o.token, countsByDate);
-    await fetchCommitCounts(userName, o.token, start, countsByDate);
+    for (const date of Object.keys(data).sort()) {
+      if (typeof data[date] === "number") countsByDate[date] = data[date];
+      if (date > (seedThrough ?? "")) seedThrough = date;
+    }
+    console.log(`📅 official calendar seed through ${seedThrough}`);
+  }
+
+  const live: Record<string, number> = {};
+  await fetchEventCounts(userName, o.token, live);
+  await fetchCommitCounts(userName, o.token, start, live);
+  let liveAdded = 0;
+  for (const [date, count] of Object.entries(live)) {
+    if (seedThrough && date <= seedThrough) continue;
+    countsByDate[date] = count;
+    liveAdded++;
+  }
+  if (liveAdded) console.log(`➕ ${liveAdded} days of live activity past the seed`);
+
+  if (calendarFile && seedThrough) {
+    const sorted = Object.fromEntries(Object.keys(countsByDate).sort().map((d) => [d, countsByDate[d]]));
+    fs.writeFileSync(calendarFile, JSON.stringify(sorted));
   }
 
   // fixed absolute thresholds (same idea as the official calendar):

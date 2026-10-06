@@ -33,6 +33,7 @@ jobs:
       - name: generate gitcode-contribution-grid-snake.svg
         env:
           GITCODE_TOKEN: ${{ secrets.GITCODE_TOKEN }}
+          GITCODE_CALENDAR_JSON: calendar.json
         run: |
           cd repo_workspace
           npm config set registry https://registry.npmmirror.com
@@ -50,10 +51,10 @@ jobs:
           cd repo_workspace
           LIGHT_SHA=$(git hash-object dist/gitcode-contribution-grid-snake.svg)
           sed -i -E "s#(raw\.gitcode\.com/weixin_51634168/weixin_51634168)/blobs/[0-9a-f]+(/gitcode-contribution-grid-snake\.svg)#\1/blobs/${LIGHT_SHA}\2#" README.md
-          git diff --quiet README.md && { echo "readme unchanged"; exit 0; }
+          git diff --quiet README.md && git diff --quiet calendar.json && { echo "nothing to bump"; exit 0; }
           git config user.name "gitcode-bot"
           git config user.email "gitcode-bot@noreply.gitcode.com"
-          git add README.md
+          git add README.md calendar.json
           git commit -m "chore: bump snake svg url"
           REPO_OWNER="${ATOMGIT_REPOSITORY%/*}"
           git push "https://${REPO_OWNER}:${GITCODE_TOKEN}@gitcode.com/${ATOMGIT_REPOSITORY}.git" HEAD
