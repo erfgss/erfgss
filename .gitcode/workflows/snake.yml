@@ -38,6 +38,26 @@ jobs:
           npm config set registry https://registry.npmmirror.com
           npx -y tsx generator/run.ts
 
+      # raw.gitcode.com stopped serving svg from /raw/<branch>/ urls (it now
+      # 302s to a cannot_preview placeholder), so README points at the
+      # content-addressed /blobs/<sha>/ url instead. the sha changes with
+      # every regeneration, so rewrite README and push it before the
+      # orphan-checkout below destroys the working tree.
+      - name: bump snake url in readme
+        env:
+          GITCODE_TOKEN: ${{ secrets.GITCODE_TOKEN }}
+        run: |
+          cd repo_workspace
+          LIGHT_SHA=$(git hash-object dist/gitcode-contribution-grid-snake.svg)
+          sed -i -E "s#(raw\.gitcode\.com/weixin_51634168/weixin_51634168)/blobs/[0-9a-f]+(/gitcode-contribution-grid-snake\.svg)#\1/blobs/${LIGHT_SHA}\2#" README.md
+          git diff --quiet README.md && { echo "readme unchanged"; exit 0; }
+          git config user.name "gitcode-bot"
+          git config user.email "gitcode-bot@noreply.gitcode.com"
+          git add README.md
+          git commit -m "chore: bump snake svg url"
+          REPO_OWNER="${ATOMGIT_REPOSITORY%/*}"
+          git push "https://${REPO_OWNER}:${GITCODE_TOKEN}@gitcode.com/${ATOMGIT_REPOSITORY}.git" HEAD
+
       # publish the svgs to the output branch (history is force-overwritten,
       # the branch only ever hosts the two svg files)
       - name: push svgs to the output branch
