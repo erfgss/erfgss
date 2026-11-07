@@ -137,13 +137,14 @@ export const getGitcodeUserContribution = async (
   userName: string,
   o: { token: string },
 ): Promise<Cell[]> => {
-  // grid covers the last ~365 days, starting on a Sunday (UTC dates)
+  // grid covers exactly the official profile calendar window (UTC dates):
+  // [today-365, today] -- 366 days, rows Mon..Sun (一 on top), partial
+  // first/last columns, same layout as the official heatmap
   const today = new Date();
   today.setUTCHours(0, 0, 0, 0);
 
   const start = new Date(today);
   start.setUTCDate(start.getUTCDate() - 365);
-  start.setUTCDate(start.getUTCDate() - start.getUTCDay());
 
   const countsByDate: Record<string, number> = {};
 
@@ -192,7 +193,7 @@ export const getGitcodeUserContribution = async (
   let x = 0;
 
   while (cursor <= today) {
-    const y = cursor.getUTCDay(); // 0 = Sunday
+    const y = (cursor.getUTCDay() + 6) % 7; // 0 = Monday
     const date = cursor.toISOString().slice(0, 10);
     const count = countsByDate[date] ?? 0;
 
