@@ -8,6 +8,8 @@ on:
     branches: [main]
     paths:
       - '.github/workflows/snake.yml'
+      - 'generator/**'
+      - 'github-calendar.json'
 
 permissions:
   contents: write
@@ -21,19 +23,18 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
-      - uses: Platane/snk/svg-only@v3
+      - uses: actions/setup-node@v4
         with:
-          github_user_name: ${{ github.repository_owner }}
-          outputs: |
-            assets/github-colorful-snake.svg?palette=github-light&color_snake=#f97316&color_dots=#ebedf0,#ffe066,#63e6be,#74c0fc,#b197fc
-            assets/github-colorful-snake-dark.svg?palette=github-dark&color_snake=#f97316&color_dots=#161b22,#d4a017,#20c997,#4dabf7,#9775fa
+          node-version: '22'
+      - name: Generate complete contribution calendar
+        run: npx --yes tsx@4.20.6 generator/github.ts
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
       - name: Save updated animations
         run: |
           git config user.name 'github-actions[bot]'
           git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
-          git add assets/github-colorful-snake*.svg
+          git add assets/github-colorful-complete*.svg github-calendar.json
           if ! git diff --cached --quiet; then
             git commit -m 'chore: update GitHub contribution snake'
             git push origin HEAD:main
